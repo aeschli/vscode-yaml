@@ -6,12 +6,9 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 
-import * as path from 'path';
-
-import { workspace, ExtensionContext, extensions } from 'vscode';
-import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind, NotificationType } from 'vscode-languageclient';
-import { URI } from 'vscode-uri';
-import { CUSTOM_SCHEMA_REQUEST, CUSTOM_CONTENT_REQUEST, SchemaExtensionAPI } from './schema-extension-api';
+import { workspace, ExtensionContext, extensions, Uri } from 'vscode';
+import { LanguageClientOptions, NotificationType, CommonLanguageClient, ResponseError } from 'vscode-languageclient';
+import { CUSTOM_SCHEMA_REQUEST, CUSTOM_CONTENT_REQUEST, SchemaExtensionAPI, CONTENT_REQUEST, STORE_REQUEST } from './schema-extension-api';
 
 export interface ISchemaAssociations {
 	[pattern: string]: string[];
@@ -25,19 +22,14 @@ namespace DynamicCustomSchemaRequestRegistration {
 	export const type: NotificationType<{}, {}> = new NotificationType('yaml/registerCustomSchemaRequest');
 }
 
-export function activate(context: ExtensionContext) {
-	// The YAML language server is implemented in node
-	let serverModule = context.asAbsolutePath(path.join('node_modules', 'yaml-language-server', 'out', 'server', 'src', 'server.js'));
+export type LanguageClientConstructor = (name: string, description: string, clientOptions: LanguageClientOptions) => CommonLanguageClient;
 
-	// The debug options for the server
-	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
+export interface RuntimeEnvironment {
+	xhr(uri: string): Promise<string>;
+}
 
-	// If the extension is launched in debug mode then the debug server options are used
-	// Otherwise the run options are used
-	let serverOptions: ServerOptions = {
-		run : { module: serverModule, transport: TransportKind.ipc },
-		debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
-	};
+
+export function startClient(context: ExtensionContext, newLanguageClient: LanguageClientConstructor, runtime: RuntimeEnvironment) : SchemaExtensionAPI {
 
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
@@ -57,7 +49,8 @@ export function activate(context: ExtensionContext) {
 	};
 
 	// Create the language client and start it
-	let client = new LanguageClient('yaml', 'YAML Support', serverOptions, clientOptions);
+
+	let client = newLanguageClient('yaml', 'YAML Support', clientOptions);
 	let disposable = client.start();
 
 	const schemaExtensionAPI = new SchemaExtensionAPI(client);
@@ -83,6 +76,25 @@ export function activate(context: ExtensionContext) {
 		client.onRequest(CUSTOM_CONTENT_REQUEST, (uri: string) => {
 			return schemaExtensionAPI.requestCustomSchemaContent(uri);
 		});
+
+		client.onRequest(CONTENT_REQUEST, (resource: string) => {
+			const uri = Uri.parse(resource);
+			if (uri.scheme === 'untitled') {
+				return Promise.reject(new ResponseError(3, 'Unable to load {0}', uri.toString()));
+			}
+			if (uri.scheme !== 'http' && uri.scheme !== 'https') {
+				return workspace.openTextDocument(uri).then(doc => {
+					return doc.getText();
+				}, error => {
+					return Promise.reject(new ResponseError(2, error.toString()));
+				});
+			} else {
+				return runtime.xhr(resource);
+			}
+		});
+		client.onRequest(STORE_REQUEST, (uri: string) => {
+			return runtime.xhr(uri);
+		});
 	});
 
 	return schemaExtensionAPI;
@@ -102,10 +114,12 @@ function getSchemaAssociation(context: ExtensionContext): ISchemaAssociations {
 					// Get the extension's YAML schema associations
 					let { fileMatch, url } = jv;
 
-					if (fileMatch && url) {
+					if (typeof fileMatch === 'string' && typeof url === 'string') {
 						// Convert relative file paths to absolute file URIs
 						if (url[0] === '.' && url[1] === '/') {
-							url = URI.file(path.join(extension.extensionPath, url)).toString();
+							let extensionPath = extension.extensionUri.path;
+							extensionPath = extensionPath + url.substring(extensionPath.endsWith('/') ? 2 : 1);
+							url = extension.extensionUri.with({ path: extensionPath }).toString();
 						}
 						// Replace path variables
 						if (fileMatch[0] === '%') {

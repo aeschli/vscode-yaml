@@ -1,5 +1,5 @@
-import { URI } from 'vscode-uri'
-import { LanguageClient, RequestType } from 'vscode-languageclient';
+import { Uri } from 'vscode'
+import { CommonLanguageClient, RequestType } from 'vscode-languageclient';
 
 interface SchemaContributorProvider {
     readonly requestSchema: (resource: string) => string;
@@ -37,9 +37,9 @@ export interface ExtensionAPI {
 
 class SchemaExtensionAPI implements ExtensionAPI {
     private _customSchemaContributors: { [index: string]: SchemaContributorProvider } = {};
-    private _yamlClient: LanguageClient;
+    private _yamlClient: CommonLanguageClient;
 
-    constructor(client: LanguageClient) {
+    constructor(client: CommonLanguageClient) {
         this._yamlClient = client;
     }
 
@@ -97,7 +97,7 @@ class SchemaExtensionAPI implements ExtensionAPI {
 	 */
     public requestCustomSchemaContent(uri: string): string {
         if (uri) {
-            let _uri = URI.parse(uri);
+            let _uri = Uri.parse(uri);
 
             if (_uri.scheme && this._customSchemaContributors[_uri.scheme] &&
                 this._customSchemaContributors[_uri.scheme].requestSchemaContent) {
@@ -114,5 +114,8 @@ class SchemaExtensionAPI implements ExtensionAPI {
 // constants
 export const CUSTOM_SCHEMA_REQUEST = 'custom/schema/request';
 export const CUSTOM_CONTENT_REQUEST = 'custom/schema/content';
+
+export const CONTENT_REQUEST = 'schema/content';
+export const STORE_REQUEST = 'schema/store';
 
 export { SchemaExtensionAPI };

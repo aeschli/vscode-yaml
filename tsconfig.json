@@ -7,12 +7,12 @@
 		"lib": [ "es2016" ],
 		"sourceMap": true
 	},
-	"exclude": [
-		"node_modules",
-		"server"
-	],
+
 	"include": [
 		"src",
 		"test"
-	]
+	],
+	"exclude": [
+		"src/webworker",
+	],
 }
