@@ -3,7 +3,9 @@ typings/**
 out/test/**
 test/**
 src/**
+build/**
 images/**
+scripts/**
 **/*.map
 .gitignore
 .github/**
@@ -11,6 +13,8 @@ tsconfig.json
 vsc-extension-quickstart.md
 undefined/**
 CONTRIBUTING.md
+CHANGELOG.md
+Jenkinsfile
 .vscode-test/**
 **/**.vsix
 **/**.tar.gz
