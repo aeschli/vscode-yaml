@@ -39,7 +39,7 @@
   ],
   "main": "./out/src/webworker/yamlClientMain",
   "browser": "./out/src/webworker/yamlClientMain",
-  "extensionKind": "web",
+  "extensionKind": [ "web" ],
   "contributes": {
     "languages": [
       {
