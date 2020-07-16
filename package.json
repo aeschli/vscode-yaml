@@ -10,7 +10,7 @@
     }
   ],
   "license": "MIT",
-  "version": "0.9.0-webworker.1",
+  "version": "0.9.0-webworker.2",
   "publisher": "aeschli",
   "preview": true,
   "bugs": "https://github.com/redhat-developer/vscode-yaml/issues",
@@ -39,7 +39,9 @@
   ],
   "main": "./out/src/webworker/yamlClientMain",
   "browser": "./out/src/webworker/yamlClientMain",
-  "extensionKind": [ "web" ],
+  "extensionKind": [
+    "web"
+  ],
   "contributes": {
     "languages": [
       {
