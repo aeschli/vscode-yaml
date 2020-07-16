@@ -98,17 +98,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = void 0;
 const yamlClientCommon_1 = __webpack_require__(1);
 const browser_1 = __webpack_require__(62);
+// declare const Worker: {
+// 	new(stringUrl: string): any;
+// };
+// declare function fetch(uri: string, options: any): any;
 // this method is called when vs code is activated
 function activate(context) {
-    const serverMain = context.asAbsolutePath('node_modules/yaml-language-server/out/server/src/webworker/yamlServerMain.js');
+    const extensionUri = context.extensionUri;
+    const serverMain = extensionUri.with({ path: extensionUri.path + '/node_modules/yaml-language-server/out/server/src/webworker/yamlServerMain.js' });
     try {
-        const worker = new Worker(serverMain);
+        const worker = createWorker(serverMain.toString(false));
         const newLanguageClient = (id, name, clientOptions) => {
             return new browser_1.LanguageClient(id, name, clientOptions, worker);
         };
         const runtime = {
             xhr(uri) {
-                return fetch(uri, { mode: 'cors' })
+                return globalThis.fetch(uri, { mode: 'cors' })
                     .then(function (response) {
                     return response.text();
                 });
@@ -121,6 +126,41 @@ function activate(context) {
     }
 }
 exports.activate = activate;
+function createWorker(workerUrl) {
+    var worker = null;
+    try {
+        worker = new globalThis.Worker(workerUrl);
+        worker.onerror = function (event) {
+            event.preventDefault();
+            worker = createWorkerFallback(workerUrl);
+        };
+    }
+    catch (e) {
+        worker = createWorkerFallback(workerUrl);
+    }
+    return worker;
+}
+function createWorkerFallback(workerUrl) {
+    var worker = null;
+    try {
+        var blob;
+        try {
+            blob = new globalThis.Blob(["importScripts('" + workerUrl + "');"], { "type": 'application/javascript' });
+        }
+        catch (e) {
+            var blobBuilder = new (globalThis.BlobBuilder || globalThis.WebKitBlobBuilder || globalThis.MozBlobBuilder)();
+            blobBuilder.append("importScripts('" + workerUrl + "');");
+            blob = blobBuilder.getBlob('application/javascript');
+        }
+        var url = globalThis.URL || globalThis.webkitURL;
+        var blobUrl = url.createObjectURL(blob);
+        worker = new globalThis.Worker(blobUrl);
+    }
+    catch (e1) {
+        //if it still fails, there is nothing much we can do
+    }
+    return worker;
+}
 
 
 /***/ }),
