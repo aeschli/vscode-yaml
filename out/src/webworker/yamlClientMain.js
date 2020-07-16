@@ -107,7 +107,7 @@ function activate(context) {
     const extensionUri = context.extensionUri;
     const serverMain = extensionUri.with({ path: extensionUri.path + '/node_modules/yaml-language-server/out/server/src/webworker/yamlServerMain.js' });
     try {
-        const worker = createWorker(serverMain.toString(false));
+        const worker = createWorker(serverMain.toString(true));
         const newLanguageClient = (id, name, clientOptions) => {
             return new browser_1.LanguageClient(id, name, clientOptions, worker);
         };
