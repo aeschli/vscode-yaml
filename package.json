@@ -10,7 +10,7 @@
     }
   ],
   "license": "MIT",
-  "version": "0.9.0-webworker.2",
+  "version": "0.9.0-webworker.3",
   "publisher": "aeschli",
   "preview": true,
   "bugs": "https://github.com/redhat-developer/vscode-yaml/issues",
