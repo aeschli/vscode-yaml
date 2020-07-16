@@ -37,7 +37,7 @@
     "autocompletion",
     "validation"
   ],
-  "main": "./out/src/node/yamlClientMain",
+  "main": "./out/src/webworker/yamlClientMain",
   "browser": "./out/src/webworker/yamlClientMain",
   "extensionKind": "web",
   "contributes": {
